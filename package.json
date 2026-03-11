@@ -1,0 +1,23 @@
+{
+  "name": "chirp",
+  "version": "1.0.0",
+  "description": "Lightweight telemetry service for counting events in developer tools",
+  "main": "src/main.ts",
+  "scripts": {
+    "dev": "ts-node src/main.ts",
+    "build": "tsc",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {
+    "fastify": "^4.24.3",
+    "mysql2": "^3.6.5",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/uuid": "^9.0.7",
+    "typescript": "^5.3.2",
+    "ts-node": "^10.9.2"
+  }
+}

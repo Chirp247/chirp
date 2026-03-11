@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.o
+_perry_stubs.*
+chirp
+chirp-linux
+.env
