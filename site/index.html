@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chirp — Lightweight Telemetry for Developer Tools</title>
+<meta name="description" content="Count events in your developer tools with a simple API. Open source, single binary, no overhead.">
+<style>
+  :root { --bg: #0a0e14; --surface: #12171f; --border: #1e2530; --text: #e0e6ed; --muted: #6b7a8d; --accent: #3b82f6; --accent2: #22d3ee; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+  .container { max-width: 720px; margin: 0 auto; padding: 0 1.5rem; }
+
+  header { padding: 3rem 0 1rem; }
+  .logo { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+  .logo span { color: var(--accent); }
+
+  .hero { padding: 4rem 0 3rem; }
+  .hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 1.25rem; }
+  .hero h1 em { font-style: normal; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero p { font-size: 1.15rem; color: var(--muted); max-width: 540px; }
+
+  .code-block { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin: 3rem 0; overflow-x: auto; font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace; font-size: 0.85rem; line-height: 1.7; color: var(--muted); }
+  .code-block .cm { color: #4a5568; }
+  .code-block .str { color: #a5d6a7; }
+  .code-block .key { color: #90caf9; }
+  .code-block .cmd { color: var(--accent2); }
+
+  .features { padding: 2rem 0 3rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  @media (max-width: 540px) { .features { grid-template-columns: 1fr; } }
+  .feature { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; }
+  .feature h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.35rem; }
+  .feature p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+
+  .cta { padding: 3rem 0; text-align: center; border-top: 1px solid var(--border); }
+  .cta h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; letter-spacing: -0.02em; }
+  .cta p { color: var(--muted); margin-bottom: 1.5rem; }
+  .cta a.btn { display: inline-block; background: var(--accent); color: #fff; text-decoration: none; padding: 0.7rem 1.75rem; border-radius: 8px; font-weight: 600; font-size: 0.95rem; transition: opacity 0.15s; }
+  .cta a.btn:hover { opacity: 0.85; }
+
+  footer { padding: 2rem 0 3rem; text-align: center; color: var(--muted); font-size: 0.8rem; }
+  footer a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); }
+  footer a:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo"><span>chirp</span></div>
+  </header>
+
+  <section class="hero">
+    <h1>Simple event telemetry<br>for <em>developer tools</em></h1>
+    <p>Count what matters. Send events with a single API call, get time-series data back. Open source, compiles to a single 4MB binary, backed by MySQL.</p>
+  </section>
+
+  <div class="code-block">
+    <span class="cm"># Send an event</span><br>
+    <span class="cmd">curl</span> -X POST https://api.chirp247.com/api/v1/event \<br>
+    &nbsp;&nbsp;-H <span class="str">"X-Chirp-Key: your_key"</span> \<br>
+    &nbsp;&nbsp;-d <span class="str">'{"<span class="key">event</span>":"compile","<span class="key">dims</span>":{"<span class="key">platform</span>":"linux"}}'</span><br>
+    <br>
+    <span class="cm"># Query the data</span><br>
+    <span class="cmd">curl</span> <span class="str">"https://api.chirp247.com/api/v1/query?project=myapp&amp;event=compile&amp;period=30d"</span><br>
+    <br>
+    <span class="cm"># {"total":1842,"uniqueClients":93,"series":[{"date":"2026-03-09","count":61}, ...]}</span>
+  </div>
+
+  <section class="features">
+    <div class="feature">
+      <h3>Fire and forget</h3>
+      <p>One POST, one event. Batch up to 50 at a time. Always returns 202 so it never blocks your tool.</p>
+    </div>
+    <div class="feature">
+      <h3>Dimensions</h3>
+      <p>Attach up to 4 string dimensions per event. Slice by platform, version, region, or anything else.</p>
+    </div>
+    <div class="feature">
+      <h3>Daily rollups</h3>
+      <p>Raw events aggregate into daily rollups automatically. Query fast, store efficiently.</p>
+    </div>
+    <div class="feature">
+      <h3>Single binary</h3>
+      <p>Compiled with Perry to a ~4MB native binary. No Node.js, no containers, no runtime.</p>
+    </div>
+    <div class="feature">
+      <h3>Dashboard &amp; badges</h3>
+      <p>Built-in interactive dashboard per project. Shields.io-style SVG badges for your README.</p>
+    </div>
+    <div class="feature">
+      <h3>Open source</h3>
+      <p>MIT licensed. Self-host it, fork it, or use the public instance at api.chirp247.com.</p>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2>Interested?</h2>
+    <p>Chirp is in early access. Get in touch and we'll set up a project for you.</p>
+    <a class="btn" href="mailto:info@chirp247.com">info@chirp247.com</a>
+  </section>
+
+  <footer>
+    <a href="https://github.com/Chirp247/chirp">GitHub</a> &middot; <a href="https://api.chirp247.com/API.md">API Docs</a>
+  </footer>
+</div>
+
+</body>
+</html>
