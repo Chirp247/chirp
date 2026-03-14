@@ -12,20 +12,26 @@ function extractRows(result: any): any[] {
     return [];
 }
 
+function isValidDate(s: string): boolean {
+    return /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
+// Escape single quotes for safe SQL string inlining
+function esc(s: string): string {
+    return s.replace(/'/g, "''").replace(/\\/g, "\\\\");
+}
+
 function calcFromDate(period: string): string {
-    const now = new Date();
-    if (period === '7d') {
-        now.setDate(now.getDate() - 7);
-    } else if (period === '90d') {
-        now.setDate(now.getDate() - 90);
-    } else if (period === '12m') {
-        now.setMonth(now.getMonth() - 12);
-    } else if (period === 'all') {
+    if (period === 'all') {
         return '2020-01-01';
-    } else {
-        now.setDate(now.getDate() - 30);
     }
-    return now.toISOString().split('T')[0];
+    // Perry's Date.setDate() is a no-op, so use timestamp arithmetic
+    var days = 30;
+    if (period === '7d') days = 7;
+    else if (period === '90d') days = 90;
+    else if (period === '12m') days = 365;
+    var ms = Date.now() - days * 24 * 60 * 60 * 1000;
+    return new Date(ms).toISOString().split('T')[0];
 }
 
 export async function queryRoutes(app: FastifyInstance) {
@@ -38,6 +44,7 @@ export async function queryRoutes(app: FastifyInstance) {
             return { error: 'project parameter is required' };
         }
 
+        // Project lookup uses single param which works in Perry
         const projectResult = await query(
             'SELECT id, apiKey FROM projects WHERE name = ?',
             [projectName]
@@ -58,6 +65,13 @@ export async function queryRoutes(app: FastifyInstance) {
         const eventName = q.event || '';
         const groupBy = q.group_by || '';
 
+        if (!isValidDate(fromDate) || !isValidDate(toDate)) {
+            reply.status(400);
+            return { error: 'Invalid date format' };
+        }
+
+        // Perry's mysql2 cannot reliably bind multiple params in complex queries.
+        // All values are inlined with escaping; dates are validated above.
         if (groupBy.length > 0) {
             if (eventName.length > 0) {
                 return await queryGroupByWithEvent(projectId, groupBy, eventName, fromDate, toDate);
@@ -76,8 +90,10 @@ export async function queryRoutes(app: FastifyInstance) {
 
 async function querySeriesWithEvent(projectId: string, eventName: string, fromDate: string, toDate: string) {
     const result = await query(
-        'SELECT CAST(day AS CHAR) as d, CAST(SUM(count) AS SIGNED) as cnt, CAST(SUM(uniqueClients) AS SIGNED) as uniq FROM rollups WHERE projectId = ? AND event = ? AND dimKey IS NULL AND day >= ? AND day <= ? GROUP BY day ORDER BY day ASC',
-        [projectId, eventName, fromDate, toDate]
+        "SELECT CAST(day AS CHAR) as d, CAST(SUM(count) AS SIGNED) as cnt, CAST(SUM(uniqueClients) AS SIGNED) as uniq " +
+        "FROM rollups WHERE projectId = '" + esc(projectId) + "' AND event = '" + esc(eventName) + "' " +
+        "AND dimKey IS NULL AND day >= '" + fromDate + "' AND day <= '" + toDate + "' " +
+        "GROUP BY day ORDER BY day ASC"
     );
     const rows = extractRows(result);
     return buildSeriesResponse(rows);
@@ -85,8 +101,10 @@ async function querySeriesWithEvent(projectId: string, eventName: string, fromDa
 
 async function querySeriesNoEvent(projectId: string, fromDate: string, toDate: string) {
     const result = await query(
-        'SELECT CAST(day AS CHAR) as d, CAST(SUM(count) AS SIGNED) as cnt, CAST(SUM(uniqueClients) AS SIGNED) as uniq FROM rollups WHERE projectId = ? AND dimKey IS NULL AND day >= ? AND day <= ? GROUP BY day ORDER BY day ASC',
-        [projectId, fromDate, toDate]
+        "SELECT CAST(day AS CHAR) as d, CAST(SUM(count) AS SIGNED) as cnt, CAST(SUM(uniqueClients) AS SIGNED) as uniq " +
+        "FROM rollups WHERE projectId = '" + esc(projectId) + "' " +
+        "AND dimKey IS NULL AND day >= '" + fromDate + "' AND day <= '" + toDate + "' " +
+        "GROUP BY day ORDER BY day ASC"
     );
     const rows = extractRows(result);
     return buildSeriesResponse(rows);
@@ -109,8 +127,10 @@ function buildSeriesResponse(rows: any[]) {
 
 async function queryGroupByWithEvent(projectId: string, groupBy: string, eventName: string, fromDate: string, toDate: string) {
     const result = await query(
-        'SELECT dimVal, CAST(SUM(count) AS SIGNED) as cnt, CAST(SUM(uniqueClients) AS SIGNED) as uniq FROM rollups WHERE projectId = ? AND dimKey = ? AND event = ? AND day >= ? AND day <= ? GROUP BY dimVal ORDER BY cnt DESC',
-        [projectId, groupBy, eventName, fromDate, toDate]
+        "SELECT dimVal, CAST(SUM(count) AS SIGNED) as cnt, CAST(SUM(uniqueClients) AS SIGNED) as uniq " +
+        "FROM rollups WHERE projectId = '" + esc(projectId) + "' AND dimKey = '" + esc(groupBy) + "' " +
+        "AND event = '" + esc(eventName) + "' AND day >= '" + fromDate + "' AND day <= '" + toDate + "' " +
+        "GROUP BY dimVal ORDER BY cnt DESC"
     );
     const rows = extractRows(result);
     return buildBreakdownResponse(rows, groupBy);
@@ -118,8 +138,10 @@ async function queryGroupByWithEvent(projectId: string, groupBy: string, eventNa
 
 async function queryGroupByNoEvent(projectId: string, groupBy: string, fromDate: string, toDate: string) {
     const result = await query(
-        'SELECT dimVal, CAST(SUM(count) AS SIGNED) as cnt, CAST(SUM(uniqueClients) AS SIGNED) as uniq FROM rollups WHERE projectId = ? AND dimKey = ? AND day >= ? AND day <= ? GROUP BY dimVal ORDER BY cnt DESC',
-        [projectId, groupBy, fromDate, toDate]
+        "SELECT dimVal, CAST(SUM(count) AS SIGNED) as cnt, CAST(SUM(uniqueClients) AS SIGNED) as uniq " +
+        "FROM rollups WHERE projectId = '" + esc(projectId) + "' AND dimKey = '" + esc(groupBy) + "' " +
+        "AND day >= '" + fromDate + "' AND day <= '" + toDate + "' " +
+        "GROUP BY dimVal ORDER BY cnt DESC"
     );
     const rows = extractRows(result);
     return buildBreakdownResponse(rows, groupBy);

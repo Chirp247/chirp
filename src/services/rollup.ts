@@ -94,9 +94,9 @@ export async function pruneOldEvents() {
 }
 
 function getYesterday(): string {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().split('T')[0];
+    // Perry's Date.setDate() is a no-op, so use timestamp arithmetic
+    var ms = Date.now() - 24 * 60 * 60 * 1000;
+    return new Date(ms).toISOString().split('T')[0];
 }
 
 export function startRollupScheduler() {
