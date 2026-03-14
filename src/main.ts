@@ -102,8 +102,8 @@ async function handleCli(args: string[]) {
             const name = args[nameIdx + 1];
             const displayName = displayIdx !== -1 ? args[displayIdx + 1] : null;
             const id = uuidv4();
-            const apiKey = crypto.randomBytes(32).toString('hex');
-            const hmacSecret = crypto.randomBytes(32).toString('hex');
+            const apiKey = crypto.createHmac('sha256', uuidv4()).update(uuidv4()).digest('hex');
+            const hmacSecret = crypto.createHmac('sha256', uuidv4()).update(uuidv4()).digest('hex');
 
             await query(
                 'INSERT INTO projects (id, name, displayName, apiKey, hmacSecret) VALUES (?, ?, ?, ?, ?)',
@@ -141,8 +141,8 @@ async function handleCli(args: string[]) {
             }
 
             const name = args[nameIdx + 1];
-            const newApiKey = crypto.randomBytes(32).toString('hex');
-            const newHmacSecret = crypto.randomBytes(32).toString('hex');
+            const newApiKey = crypto.createHmac('sha256', uuidv4()).update(uuidv4()).digest('hex');
+            const newHmacSecret = crypto.createHmac('sha256', uuidv4()).update(uuidv4()).digest('hex');
 
             const [result] = await query(
                 'UPDATE projects SET apiKey = ?, hmacSecret = ? WHERE name = ?',
