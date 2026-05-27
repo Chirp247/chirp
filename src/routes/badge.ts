@@ -35,27 +35,18 @@ export async function badgeRoutes(app: FastifyInstance) {
 
             const projectId = projects[0].id;
 
-            const now = new Date();
+            // Perry's Date.setDate()/setMonth() are no-ops, so use timestamp
+            // arithmetic (mirrors calcFromDate in routes/query.ts).
             let fromDate: string;
-            switch (period) {
-                case '7d':
-                    now.setDate(now.getDate() - 7);
-                    fromDate = now.toISOString().split('T')[0];
-                    break;
-                case '90d':
-                    now.setDate(now.getDate() - 90);
-                    fromDate = now.toISOString().split('T')[0];
-                    break;
-                case '12m':
-                    now.setMonth(now.getMonth() - 12);
-                    fromDate = now.toISOString().split('T')[0];
-                    break;
-                case 'all':
-                    fromDate = '2020-01-01';
-                    break;
-                default:
-                    now.setDate(now.getDate() - 30);
-                    fromDate = now.toISOString().split('T')[0];
+            if (period === 'all') {
+                fromDate = '2020-01-01';
+            } else {
+                var days = 30;
+                if (period === '7d') days = 7;
+                else if (period === '90d') days = 90;
+                else if (period === '12m') days = 365;
+                var ms = Date.now() - days * 24 * 60 * 60 * 1000;
+                fromDate = new Date(ms).toISOString().split('T')[0];
             }
 
             const countResult = await query(

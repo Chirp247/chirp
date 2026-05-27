@@ -1,8 +1,8 @@
 // Database schema migrations
-import { Pool } from './db';
+import { query } from './db';
 
-export async function runMigrations(db: Pool) {
-    await db.query(`
+export async function runMigrations() {
+    await query(`
         CREATE TABLE IF NOT EXISTS projects (
             id           VARCHAR(36) PRIMARY KEY,
             name         VARCHAR(100) NOT NULL UNIQUE,
@@ -14,7 +14,7 @@ export async function runMigrations(db: Pool) {
         )
     `);
 
-    await db.query(`
+    await query(`
         CREATE TABLE IF NOT EXISTS events (
             id          BIGINT AUTO_INCREMENT PRIMARY KEY,
             projectId   VARCHAR(36) NOT NULL,
@@ -35,7 +35,7 @@ export async function runMigrations(db: Pool) {
         )
     `);
 
-    await db.query(`
+    await query(`
         CREATE TABLE IF NOT EXISTS rollups (
             id             BIGINT AUTO_INCREMENT PRIMARY KEY,
             projectId      VARCHAR(36) NOT NULL,

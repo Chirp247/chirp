@@ -9,7 +9,8 @@ import { queryRoutes } from './routes/query';
 import { projectRoutes } from './routes/project';
 import { badgeRoutes } from './routes/badge';
 import { dashboardRoutes } from './routes/dashboard';
-import { startRollupScheduler, runRollup, pruneOldEvents } from './services/rollup';
+import { runRollup, pruneOldEvents } from './services/rollup';
+import { runMigrations } from './schema';
 
 const app: FastifyInstance = Fastify({
     logger: {
@@ -29,6 +30,9 @@ if (args.length > 0) {
 }
 
 async function main() {
+    // Ensure schema is up to date before serving traffic
+    await runMigrations();
+
     // CORS headers (inline — @fastify/cors not available in Perry)
     app.addHook('onRequest', async (request, reply) => {
         reply.header('Access-Control-Allow-Origin', '*');
@@ -62,8 +66,7 @@ async function main() {
     await app.register(badgeRoutes, { prefix: '/badge' });
     await app.register(dashboardRoutes, { prefix: '/p' });
 
-    // Start rollup scheduler
-    startRollupScheduler();
+    // Rollups are driven by the chirp-rollup systemd timer (see services/rollup.ts).
 
     // Start server
     try {

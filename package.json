@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "ts-node src/main.ts",
     "build": "tsc",
-    "start": "node dist/main.js"
+    "start": "node dist/main.js",
+    "check": "perry check src/main.ts",
+    "compile": "perry compile src/main.ts -o chirp"
   },
   "dependencies": {
     "fastify": "^4.24.3",
-    "mysql2": "^3.6.5",
+    "@perryts/mysql": "^0.1.4",
     "dotenv": "^16.3.1",
     "uuid": "^9.0.0"
   },

@@ -2,8 +2,6 @@
 import { query } from '../db';
 import { config } from '../config';
 
-let lastRollupDate: string | null = null;
-
 // Validate date format to prevent SQL injection when inlining dates
 function isValidDate(s: string): boolean {
     return /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -69,7 +67,6 @@ export async function runRollup(targetDate?: string) {
     );
 
     console.log(`Rollup complete for ${day}`);
-    lastRollupDate = day;
 }
 
 export async function pruneOldEvents() {
@@ -99,27 +96,7 @@ function getYesterday(): string {
     return new Date(ms).toISOString().split('T')[0];
 }
 
-export function startRollupScheduler() {
-    // Run on startup for any missed days
-    runRollup().catch(err => console.error('Startup rollup failed:', err));
-
-    // Check hourly if it's past 03:00 UTC and today's rollup hasn't run
-    // Uses recursive setTimeout instead of setInterval (Perry compatibility)
-    function scheduleNextCheck() {
-        setTimeout(async () => {
-            const now = new Date();
-            const hour = now.getUTCHours();
-
-            if (hour >= 3 && lastRollupDate !== getYesterday()) {
-                try {
-                    await runRollup();
-                    await pruneOldEvents();
-                } catch (err) {
-                    console.error('Scheduled rollup failed:', err);
-                }
-            }
-            scheduleNextCheck();
-        }, 60 * 60 * 1000);
-    }
-    scheduleNextCheck();
-}
+// NOTE: the daily rollup is driven externally by the chirp-rollup systemd
+// timer (calls `chirp rollup run` once a day at 03:10 UTC). The previous
+// in-process recursive-setTimeout scheduler did not fire reliably under
+// Perry, so it has been removed in favour of the timer.

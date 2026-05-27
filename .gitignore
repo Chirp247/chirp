@@ -5,3 +5,4 @@ _perry_stubs.*
 chirp
 chirp-linux
 .env
+.perry-cache/
